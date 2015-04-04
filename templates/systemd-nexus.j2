@@ -1,0 +1,17 @@
+# {{ansible_managed}}
+[Unit]
+Description=Sonatype Nexus
+ 
+[Service]
+Type=forking
+#EnvironmentFile=-/etc/systemd/user/nexus.env
+User={{nexus_os_user}}
+Group={{nexus_os_group}}
+PIDFile=/{{ nexus_installation_dir }}/nexus-latest/bin/jsw/linux-x86-64/nexus.pid
+ExecStart=/{{ nexus_installation_dir }}/nexus-latest/bin/nexus start
+ExecReload=/{{ nexus_installation_dir }}/nexus-latest/bin/nexus restart
+ExecStop=/{{ nexus_installation_dir }}/nexus-latest/bin/nexus stop
+ 
+[Install]
+Alias=nexus
+WantedBy=default.target
