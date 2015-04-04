@@ -1,5 +1,10 @@
 ---
-# tasks file for ansible-nexus
+
+- name: Unregister nexus service
+  service: name=nexus enabled=false state=stopped
+  when: ansible_os_family == "RedHat" 
+
+
 - name: Download nexus_package 
   get_url: url=http://download.sonatype.com/nexus/oss/{{ nexus_package }} dest="{{ nexus_download_dir }}/{{ nexus_package }}"
   tags: download
@@ -33,8 +38,14 @@
     mode="0755"
   tags: unpack
 
-- name: Update symlink nexus-latest
-  shell: ln -fs `ls -d {{ nexus_installation_dir }}/nexus-*|tail -1` {{ nexus_installation_dir }}/nexus-latest
+- debug: var=nexus_port
+
+- debug: var=nexus_version
+
+- name: Remove symlink
+  file:
+    path={{ nexus_installation_dir }}/nexus-latest
+    state="absent"
 
 - name: Install createrepo for nexus-yum-repository-plugin
   yum: name=createrepo state=installed
@@ -48,18 +59,9 @@
   command: mv "{{ nexus_installation_dir }}/sonatype-work" "{{ nexus_working_dir }}"
   when: s_w.stat.exists
 
-- name: Set permissions and ownership on Nexus installation package
+- name: Set permissions {{ nexus_installation_dir }}/nexus-{{ nexus_version }}
   file:
     path={{ nexus_installation_dir }}/nexus-{{ nexus_version }}
-    state="directory"
-    owner="{{ nexus_os_user }}"
-    group="{{ nexus_os_group }}"
-    mode="0755"
-    recurse=true
-    
-- name: Set permissions and ownership on Nexus installation directory
-  file:
-    path={{ nexus_installation_dir }}/{{ nexus_package }}
     state="directory"
     owner="{{ nexus_os_user }}"
     group="{{ nexus_os_group }}"
@@ -74,6 +76,9 @@
     group="{{ nexus_os_group }}"
     mode="0755"
     recurse=true
+
+- name: Update symlink nexus-latest
+  shell: ln -fs {{ nexus_installation_dir }}/nexus-{{ nexus_version }} {{ nexus_installation_dir }}/nexus-latest
 
 - name: Set permissions and ownership on Nexus logs directory
   file:
@@ -95,8 +100,6 @@
     owner="{{ nexus_os_user }}"
     group="{{ nexus_os_group }}"
     state=directory
-
-- debug: var=nexus_port
 
 - name: Configure port in nexus.properties
   lineinfile:
