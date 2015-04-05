@@ -3,6 +3,7 @@
 - name: Unregister nexus service
   service: name=nexus enabled=false state=stopped
   when: ansible_os_family == "RedHat" 
+  ignore_errors: yes
 
 
 - name: Download nexus_package 
